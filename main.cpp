@@ -16,7 +16,7 @@ int main() {
     // 拡散数 r = alpha * dt / dx^2 が 0.5 を超えると計算が発散して壊れる
     double r = alpha * dt / (dx * dx);
     
-    std::cout << "Diffusion Number r = " << r << std::endl;
+//    std::cout << "Diffusion Number r = " << r << std::endl;
     if (r > 0.5) {
         std::cout << "Warning: Unstable! (r > 0.5)" << std::endl;
         return 1;
@@ -69,7 +69,7 @@ int main() {
         }
     }
 
-    std::cout << "Setup complete. Ready to simulate." << std::endl;
+//    std::cout << "Setup complete. Ready to simulate." << std::endl;
 
     return 0;
 }
