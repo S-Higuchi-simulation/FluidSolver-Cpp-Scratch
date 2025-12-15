@@ -36,6 +36,37 @@ int main() {
         T[i] = 100.0;
     }
 
+    // 4. 時間発展のループ
+    // time_step は「何回計算するか」の回数（例えば 1000回）
+    int max_steps = 1000;
+
+    // 出力用のヘッダー
+    std::cout << "step,index,temperature" << std::endl;
+
+    for (int t = 0; t < max_steps; ++t) {
+        
+        // --- ここで空間のループを回す ---
+        // 端っこ（0とN-1）は固定なので、1 から N-2 まで計算する
+        for (int i = 1; i < N - 1; ++i) {
+            T_next[i] = T[i] + r * (T[i+1] - 2*T[i] + T[i-1]);
+        }
+        
+        // --- 境界条件の適用 ---
+        // 両端の温度を強制的に0度（ディリクレ条件）に固定する
+        T_next[0] = 0.0;
+        T_next[N - 1] = 0.0;
+
+        // --- 温度の更新 ---
+        // 計算した T_next を T にコピーして時間を進める
+        T = T_next;
+
+        // --- 結果の出力（100回に1回だけ出す） ---
+        if (t % 100 == 0) {
+            // とりあえず真ん中の温度だけ出してみる例
+            std::cout << t << "," << 50 << "," << T[50] << std::endl;
+        }
+    }
+
     std::cout << "Setup complete. Ready to simulate." << std::endl;
 
     return 0;
