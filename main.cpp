@@ -38,7 +38,7 @@ int main() {
 
     // 4. 時間発展のループ
     // time_step は「何回計算するか」の回数（例えば 1000回）
-    int max_steps = 50000;
+    int max_steps = 30000;
 
     // 出力用のヘッダー
     std::cout << "step,index,temperature" << std::endl;
@@ -60,8 +60,8 @@ int main() {
         // 計算した T_next を T にコピーして時間を進める
         T = T_next;
 
-// --- 結果の出力（10ステップに1回出す） ---
-        if (t % 10 == 0) {
+// --- 結果の出力（50ステップに1回出す） ---
+        if (t % 50 == 0) {
             // 空間の端から端まで（0〜99）すべて出力する
             for (int i = 0; i < N; ++i) {
                 std::cout << t << "," << i << "," << T[i] << std::endl;
