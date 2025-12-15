@@ -27,6 +27,15 @@ int main() {
     std::vector<double> T(N, 0.0);      // 初期値は全て0度
     std::vector<double> T_next(N, 0.0);
 
+    // 3. 初期条件の設定
+    // 真ん中の20グリッド分（40〜60番目）を100度にする
+    int start_node = N / 2 - 10; // 40
+    int end_node = N / 2 + 10;   // 60
+    
+    for (int i = start_node; i < end_node; ++i) {
+        T[i] = 100.0;
+    }
+
     std::cout << "Setup complete. Ready to simulate." << std::endl;
 
     return 0;
