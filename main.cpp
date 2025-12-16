@@ -38,7 +38,7 @@ int main() {
 
     // 4. 時間発展のループ
     // time_step は「何回計算するか」の回数（例えば 1000回）
-    int max_steps = 30000;
+    int max_steps = 1000;
 
     // 出力用のヘッダー
     std::cout << "step,index,temperature" << std::endl;
