@@ -1,75 +1,82 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <emscripten.h>
 
-int main() {
-    // 1. パラメータの定義（物理世界のルール設定）
-    const int N = 100;       // 空間分割数（100個の点に分ける）
-    const double L = 1.0;    // 棒の長さ [m]
-    const double dx = L / N; // 空間刻み幅 [m]
-    
-    // 拡散係数 (alpha) と時間刻み (dt)
-    const double alpha = 0.01; // 熱拡散率 [m^2/s]
-    const double dt = 0.0001;  // 時間刻み [s] （小さくしないと計算が爆発する）
+// --------------------------------------------------------------------------
+// 1. グローバル変数の定義（シミュレーション状態を保持）
+// --------------------------------------------------------------------------
 
-    // 安定性解析（CFL条件のようなもの）のチェック
-    // 拡散数 r = alpha * dt / dx^2 が 0.5 を超えると計算が発散して壊れる
-    double r = alpha * dt / (dx * dx);
-    
-//    std::cout << "Diffusion Number r = " << r << std::endl;
-    if (r > 0.5) {
-        std::cout << "Warning: Unstable! (r > 0.5)" << std::endl;
-        return 1;
-    }
+// パラメータ
+const int N = 100;
+const double L = 1.0;
+const double dx = L / N;
+const double alpha = 0.01;
 
-    // 2. 場の量（ベクトル）の確保
-    // T: 現在の温度, T_next: 次の瞬間の温度
-    std::vector<double> T(N, 0.0);      // 初期値は全て0度
-    std::vector<double> T_next(N, 0.0);
+// シミュレーションの状態を保持するグローバル変数
+// （main()関数スコープから外に出す）
+std::vector<double> T(N, 0.0);       // 現在の温度
+std::vector<double> T_next(N, 0.0); // 次の瞬間の温度
 
+// --------------------------------------------------------------------------
+// 2. 初期化関数
+// --------------------------------------------------------------------------
+void initialize_simulation() {
     // 3. 初期条件の設定
-    // 真ん中の20グリッド分（40〜60番目）を100度にする
-    int start_node = N / 2 - 10; // 40
-    int end_node = N / 2 + 10;   // 60
+    int start_node = N / 2 - 10;
+    int end_node = N / 2 + 10;
     
     for (int i = start_node; i < end_node; ++i) {
         T[i] = 100.0;
     }
-/*
-    // 4. 時間発展のループ
-    // time_step は「何回計算するか」の回数（例えば 1000回）
-    int max_steps = 1000;
+    
+    T_next = T; // T_nextも初期化
+    
+    std::cout << "Simulation initialized. Ready for steps." << std::endl;
+}
 
-    // 出力用のヘッダー
-    std::cout << "step,index,temperature" << std::endl;
 
-    for (int t = 0; t < max_steps; ++t) {
+// --------------------------------------------------------------------------
+// 3. JavaScriptから呼び出される「1ステップ処理」関数
+// --------------------------------------------------------------------------
+extern "C" { 
+    // ★★★ 時間刻み幅 (dt) を引数として受け取ります ★★★
+    EMSCRIPTEN_KEEPALIVE
+    void one_step_and_draw(double dt_from_js) { // new_dtをdt_from_jsに名前変更
+
+        // 1. JSから渡された Δt を基に拡散数 r を計算 (dtは引数を使用)
+        double r = alpha * dt_from_js / (dx * dx);
+
+        // 安定性チェック (クーラン条件)
+        if (r > 0.5) {
+            // クーラン条件違反！計算が発散するため、警告を出して計算を中止する
+            std::cout << "Unstable (r > 0.5)! Current r: " << r << std::endl;
+            return; // 計算中止
+        }
         
-        // --- ここで空間のループを回す ---
-        // 端っこ（0とN-1）は固定なので、1 から N-2 まで計算する
+        // --- 空間のループを回す（1ステップ分） ---
         for (int i = 1; i < N - 1; ++i) {
             T_next[i] = T[i] + r * (T[i+1] - 2*T[i] + T[i-1]);
         }
 
         // --- 境界条件の適用 ---
-        // 両端の温度を強制的に0度（ディリクレ条件）に固定する
         T_next[0] = 0.0;
         T_next[N - 1] = 0.0;
 
         // --- 温度の更新 ---
-        // 計算した T_next を T にコピーして時間を進める
         T = T_next;
 
-// --- 結果の出力（50ステップに1回出す） ---
-        if (t % 50 == 0) {
-            // 空間の端から端まで（0〜99）すべて出力する
-            for (int i = 0; i < N; ++i) {
-                std::cout << t << "," << i << "," << T[i] << std::endl;
-            }
-        }
-    }
+        // [TODO: 描画処理]
 
-//    std::cout << "Setup complete. Ready to simulate." << std::endl;
-*/
-    return 0;
+        // 正常な動作確認のため、コンソールに r の値を小さく出力する（デバッグ用）
+        std::cout << "Step: r=" << r << ", dt=" << dt_from_js << std::endl; 
+    }
+}
+
+// --------------------------------------------------------------------------
+// 4. main関数（初期化のみ）
+// --------------------------------------------------------------------------
+int main() {
+    initialize_simulation();
+    return 0; // main関数はすぐに終了し、ブラウザのフリーズを防ぐ
 }
