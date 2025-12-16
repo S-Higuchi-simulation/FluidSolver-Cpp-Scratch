@@ -57,7 +57,9 @@ extern "C" {
         T_next[N - 1] = 0.0;
 
         // --- 温度の更新 ---
-        T = T_next;
+        // --- 温度の更新 ---
+        std::swap(T, T_next);
+
 
         // [TODO: 描画処理]
 
