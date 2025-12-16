@@ -71,6 +71,17 @@ extern "C" {
         // 正常な動作確認のため、コンソールに r の値を小さく出力する（デバッグ用）
         std::cout << "Step: r=" << r << ", dt=" << dt_from_js << std::endl; 
     }
+    // JavaScriptに配列のサイズ (N) を返す
+    EMSCRIPTEN_KEEPALIVE
+    int get_array_size() {
+        return N;
+    }
+
+    // JavaScriptに計算結果の配列 T のポインタ（メモリ上の先頭アドレス）を返す
+    EMSCRIPTEN_KEEPALIVE
+    double* get_temperature_data() {
+        return T.data(); // std::vector の生のポインタを返す
+    }
 }
 
 // --------------------------------------------------------------------------
