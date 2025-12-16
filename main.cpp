@@ -1,86 +1,78 @@
-#include <iostream>
 #include <vector>
-#include <cmath>
 #include <emscripten.h>
 
 // --------------------------------------------------------------------------
-// 1. グローバル変数の定義（シミュレーション状態を保持）
-// --------------------------------------------------------------------------
-
 // パラメータ
+// --------------------------------------------------------------------------
 const int N = 100;
 const double L = 1.0;
-const double dx = L / N;
+const double dx = L / (N - 1);
 const double alpha = 0.01;
 
-// シミュレーションの状態を保持するグローバル変数
-// （main()関数スコープから外に出す）
-std::vector<double> T(N, 0.0);       // 現在の温度
-std::vector<double> T_next(N, 0.0); // 次の瞬間の温度
+// --------------------------------------------------------------------------
+// シミュレーション配列（JSと共有）
+// --------------------------------------------------------------------------
+std::vector<double> T(N, 0.0);        // ★ JS が見る配列
+std::vector<double> T_next(N, 0.0);   // 作業用
 
 // --------------------------------------------------------------------------
-// 2. 初期化関数
+// 初期化
 // --------------------------------------------------------------------------
 void initialize_simulation() {
-    // 3. 初期条件の設定
-    int start_node = N / 2 - 10;
-    int end_node = N / 2 + 10;
-    
-    for (int i = start_node; i < end_node; ++i) {
+    for (int i = 0; i < N; ++i) {
+        T[i] = 0.0;
+        T_next[i] = 0.0;
+    }
+
+    // 中央に 100 のピーク
+    for (int i = N / 2 - 10; i <= N / 2 + 10; ++i) {
         T[i] = 100.0;
     }
-    
-    //T_next = T; // T_nextも初期化
-
 }
 
-
 // --------------------------------------------------------------------------
-// 3. JavaScriptから呼び出される「1ステップ処理」関数
+// JS から呼ばれる関数
 // --------------------------------------------------------------------------
-extern "C" { 
-    // ★★★ 時間刻み幅 (dt) を引数として受け取ります ★★★
-    EMSCRIPTEN_KEEPALIVE
-    void one_step_and_draw(double dt_from_js) { // new_dtをdt_from_jsに名前変更
+extern "C" {
 
-        // 1. JSから渡された Δt を基に拡散数 r を計算 (dtは引数を使用)
-        double r = alpha * dt_from_js / (dx * dx);
+EMSCRIPTEN_KEEPALIVE
+void initialize_simulation_c() {
+    initialize_simulation();
+}
 
-        
-        // --- 空間のループを回す（1ステップ分） ---
-        for (int i = 1; i < N - 1; ++i) {
-            T_next[i] = T[i] + r * (T[i+1] - 2*T[i] + T[i-1]);
-        }
+EMSCRIPTEN_KEEPALIVE
+void one_step_and_draw(double dt) {
 
-        // --- 境界条件の適用 ---
-        T_next[0] = 0.0;
-        T_next[N - 1] = 0.0;
+    double r = alpha * dt / (dx * dx);
 
-         for (int i = 0; i < N; ++i) {
+    for (int i = 1; i < N - 1; ++i) {
+        T_next[i] = T[i] + r * (T[i + 1] - 2.0 * T[i] + T[i - 1]);
+    }
+
+    // 境界条件
+    T_next[0] = 0.0;
+    T_next[N - 1] = 0.0;
+
+    // ★★★ JS と共有しているため swap しない ★★★
+    for (int i = 0; i < N; ++i) {
         T[i] = T_next[i];
     }
-
-
-        // [TODO: 描画処理]
-
-    }
-    // JavaScriptに配列のサイズ (N) を返す
-    EMSCRIPTEN_KEEPALIVE
-    int get_array_size() {
-        return N;
-    }
-
-    // JavaScriptに計算結果の配列 T のポインタ（メモリ上の先頭アドレス）を返す
-    EMSCRIPTEN_KEEPALIVE
-    double* get_temperature_data() {
-        return T.data(); // std::vector の生のポインタを返す
-    }
 }
 
-// --------------------------------------------------------------------------
-// 4. main関数（初期化のみ）
+EMSCRIPTEN_KEEPALIVE
+int get_array_size() {
+    return N;
+}
+
+EMSCRIPTEN_KEEPALIVE
+double* get_temperature_data() {
+    return T.data();   // ★ このポインタは一生変えない
+}
+
+} // extern "C"
+
 // --------------------------------------------------------------------------
 int main() {
-    initialize_simulation();
-    return 0; // main関数はすぐに終了し、ブラウザのフリーズを防ぐ
+    // main() では何もしない
+    return 0;
 }

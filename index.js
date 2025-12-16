@@ -2328,6 +2328,7 @@ function checkIncomingModuleAPI() {
 }
 
 // Imports from the Wasm binary.
+var _initialize_simulation_c = Module['_initialize_simulation_c'] = makeInvalidEarlyAccess('_initialize_simulation_c');
 var _one_step_and_draw = Module['_one_step_and_draw'] = makeInvalidEarlyAccess('_one_step_and_draw');
 var _get_array_size = Module['_get_array_size'] = makeInvalidEarlyAccess('_get_array_size');
 var _get_temperature_data = Module['_get_temperature_data'] = makeInvalidEarlyAccess('_get_temperature_data');
@@ -2346,6 +2347,7 @@ var __indirect_function_table = makeInvalidEarlyAccess('__indirect_function_tabl
 var wasmMemory = makeInvalidEarlyAccess('wasmMemory');
 
 function assignWasmExports(wasmExports) {
+  assert(typeof wasmExports['initialize_simulation_c'] != 'undefined', 'missing Wasm export: initialize_simulation_c');
   assert(typeof wasmExports['one_step_and_draw'] != 'undefined', 'missing Wasm export: one_step_and_draw');
   assert(typeof wasmExports['get_array_size'] != 'undefined', 'missing Wasm export: get_array_size');
   assert(typeof wasmExports['get_temperature_data'] != 'undefined', 'missing Wasm export: get_temperature_data');
@@ -2361,6 +2363,7 @@ function assignWasmExports(wasmExports) {
   assert(typeof wasmExports['emscripten_stack_get_current'] != 'undefined', 'missing Wasm export: emscripten_stack_get_current');
   assert(typeof wasmExports['memory'] != 'undefined', 'missing Wasm export: memory');
   assert(typeof wasmExports['__indirect_function_table'] != 'undefined', 'missing Wasm export: __indirect_function_table');
+  _initialize_simulation_c = Module['_initialize_simulation_c'] = createExportWrapper('initialize_simulation_c', 0);
   _one_step_and_draw = Module['_one_step_and_draw'] = createExportWrapper('one_step_and_draw', 1);
   _get_array_size = Module['_get_array_size'] = createExportWrapper('get_array_size', 0);
   _get_temperature_data = Module['_get_temperature_data'] = createExportWrapper('get_temperature_data', 0);
