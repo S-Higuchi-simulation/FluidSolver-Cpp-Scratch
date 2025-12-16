@@ -494,7 +494,7 @@ function updateMemoryViews() {
   HEAP32 = new Int32Array(b);
   HEAPU32 = new Uint32Array(b);
   HEAPF32 = new Float32Array(b);
-  HEAPF64 = new Float64Array(b);
+  Module['HEAPF64'] = HEAPF64 = new Float64Array(b);
   HEAP64 = new BigInt64Array(b);
   HEAPU64 = new BigUint64Array(b);
 }
@@ -4816,7 +4816,6 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'abort',
   'wasmExports',
   'HEAPF32',
-  'HEAPF64',
   'HEAP8',
   'HEAPU8',
   'HEAP16',
