@@ -251,30 +251,89 @@
             "void",
             ["number"]
           );
+          const get_array_size_c = Module.cwrap("get_array_size", "number", []);
+          const get_temperature_data_c = Module.cwrap(
+            "get_temperature_data",
+            "number",
+            []
+          ); // 戻り値はポインタ（アドレス）なので 'number'
 
-          // 2. Δt 入力エレメントを取得
+          // 2. DOMエレメントの取得
           const dt_input_element = document.getElementById("dt_input");
+          const canvas = document.getElementById("canvas");
+          const ctx = canvas.getContext("2d");
 
-          // 3. ブラウザの描画タイミングに合わせたループ関数
+          // 3. Wasmメモリへのアクセス設定
+          const N = get_array_size_c(); // C++から配列サイズを取得 (例: 100)
+          const data_ptr = get_temperature_data_c(); // C++から配列のメモリポインタを取得
+
+          // Wasmメモリを JavaScriptのFloat64Arrayとしてマッピング
+          // HEAPF64[アドレス / 8] の形でアクセスします (double型は8バイト)
+          // ArrayBufferを共有し、読み取り専用ビューを作成
+          const temperature_data = Module.HEAPF64.subarray(
+            data_ptr / 8,
+            data_ptr / 8 + N
+          );
+
+          // 4. Canvasのサイズ設定
+          canvas.width = 600;
+          canvas.height = 300;
+
+          // 5. メイン描画ループ関数
           function mainLoop() {
-            // a. Δt の現在の値を取得
             const current_dt = parseFloat(dt_input_element.value);
 
             if (current_dt > 0) {
-              // b. C++関数を呼び出し、Δtを引数として渡す
-              // これで C++ エンジンが1ステップ計算を実行します
+              // C++の計算エンジンを1ステップ実行
               one_step_and_draw_c(current_dt);
+
+              // Canvasに描画
+              drawGraph(ctx, canvas, temperature_data, N);
             }
 
-            // c. 次の描画タイミングで再度この関数を呼び出す（ゲームループの実現）
             requestAnimationFrame(mainLoop);
           }
 
-          // d. ループの開始
-          // Wasmが完全にロードされてからループをスタートさせます。
+          // 6. 描画ロジックの定義
+          function drawGraph(ctx, canvas, data, N) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Canvasをクリア
+
+            // グラフのスケール設定
+            const maxHeight = 100; // 温度の最大値
+            const scaleX = canvas.width / (N - 1);
+            const scaleY = canvas.height / maxHeight;
+
+            ctx.beginPath();
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 3;
+
+            // 温度配列の内容を基に線を描画
+            for (let i = 0; i < N; i++) {
+              const x = i * scaleX;
+              // 描画はY軸が反転しているので、Canvasの高さから引く
+              const y = canvas.height - data[i] * scaleY;
+
+              if (i === 0) {
+                ctx.moveTo(x, y);
+              } else {
+                ctx.lineTo(x, y);
+              }
+            }
+
+            ctx.stroke();
+
+            // デバッグ用表示 (r > 0.5でフリーズしないか確認)
+            if (data[N / 2] > 500 || data[N / 2] < -100) {
+              ctx.font = "30px Arial";
+              ctx.fillStyle = "yellow";
+              ctx.fillText("!! UNSTABLE (R > 0.5) !!", 150, 150);
+            }
+          }
+
+          // 7. ループ開始
           mainLoop();
 
-          console.log("Main loop started. C++ function is ready.");
+          console.log("シミュレーションエンジン起動、描画開始。");
         },
       };
       Module.setStatus("Downloading...");
