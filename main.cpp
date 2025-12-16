@@ -46,12 +46,6 @@ extern "C" {
         // 1. JSから渡された Δt を基に拡散数 r を計算 (dtは引数を使用)
         double r = alpha * dt_from_js / (dx * dx);
 
-        // 安定性チェック (クーラン条件)
-        if (r > 0.5) {
-            // クーラン条件違反！計算が発散するため、警告を出して計算を中止する
-            std::cout << "Unstable (r > 0.5)! Current r: " << r << std::endl;
-            return; // 計算中止
-        }
         
         // --- 空間のループを回す（1ステップ分） ---
         for (int i = 1; i < N - 1; ++i) {
