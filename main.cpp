@@ -30,7 +30,7 @@ void initialize_simulation() {
         T[i] = 100.0;
     }
     
-    T_next = T; // T_nextも初期化
+    //T_next = T; // T_nextも初期化
 
 }
 
@@ -53,8 +53,8 @@ extern "C" {
         }
 
         // --- 境界条件の適用 ---
-       // T_next[0] = 0.0;
-       // T_next[N - 1] = 0.0;
+        T_next[0] = 0.0;
+        T_next[N - 1] = 0.0;
 
         // --- 温度の更新 ---
         T = T_next;
