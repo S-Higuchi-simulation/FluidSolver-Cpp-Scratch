@@ -305,14 +305,20 @@
             requestAnimationFrame(mainLoop);
           }
 
-          // 6. 描画ロジックの定義
           function drawGraph(ctx, canvas, data, N) {
             ctx.clearRect(0, 0, canvas.width, canvas.height); // Canvasをクリア
 
             // グラフのスケール設定
-            const maxHeight = 100; // 温度の最大値
+            const maxHeight = 100; // 温度の最大値 (T=100)
+
+            // ★★★ 修正ポイント: 上下マージンを定義 ★★★
+            const marginY = 30; // 上下に確保する余白 (例: 30px)
+
+            // スケール計算を修正: グラフが実際に描画される領域の高さ
+            const graphHeight = canvas.height - 2 * marginY; // 300 - 60 = 240
+
             const scaleX = canvas.width / (N - 1);
-            const scaleY = canvas.height / maxHeight;
+            const scaleY = graphHeight / maxHeight; // 240 / 100 = 2.4
 
             ctx.beginPath();
             ctx.strokeStyle = "red";
@@ -321,8 +327,12 @@
             // 温度配列の内容を基に線を描画
             for (let i = 0; i < N; i++) {
               const x = i * scaleX;
-              // 描画はY軸が反転しているので、Canvasの高さから引く
-              const y = canvas.height - data[i] * scaleY;
+
+              // ★★★ 修正ポイント: 描画座標の調整 ★★★
+              // 描画はY軸が反転している（上が0）ため、Canvasの高さから引く。
+              // T=100 (ピーク) のとき: 300 - 30 - 100*2.4 = 30px (Canvas上端から30px下)
+              // T=0 (底辺) のとき: 300 - 30 - 0*2.4 = 270px (Canvas上端から270px下)
+              const y = canvas.height - marginY - data[i] * scaleY;
 
               if (i === 0) {
                 ctx.moveTo(x, y);
