@@ -31,8 +31,7 @@ void initialize_simulation() {
     }
     
     T_next = T; // T_nextも初期化
-    
-    std::cout << "Simulation initialized. Ready for steps." << std::endl;
+
 }
 
 
@@ -68,8 +67,6 @@ extern "C" {
 
         // [TODO: 描画処理]
 
-        // 正常な動作確認のため、コンソールに r の値を小さく出力する（デバッグ用）
-        std::cout << "Step: r=" << r << ", dt=" << dt_from_js << std::endl; 
     }
     // JavaScriptに配列のサイズ (N) を返す
     EMSCRIPTEN_KEEPALIVE
