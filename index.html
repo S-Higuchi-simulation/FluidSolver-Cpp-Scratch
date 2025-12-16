@@ -141,6 +141,14 @@
         <div class="control">
           dt:
           <input type="number" id="dt_input" value="0.001" step="0.0001" />
+
+          <button id="reset_btn">やり直し</button>
+        </div>
+
+        <div class="control">
+          Courant 数 r =
+          <span id="courant_value">---</span>
+          <span id="courant_warning"></span>
         </div>
 
         <canvas id="canvas" width="600" height="300"></canvas>
@@ -155,16 +163,43 @@
           const getN = Module.cwrap("get_array_size", "number", []);
           const getPtr = Module.cwrap("get_temperature_data", "number", []);
 
-          // 初期化
+          // C++ 側パラメータ（合わせておく）
+          const alpha = 0.01;
+          const L = 1.0;
+
           init_c();
 
           const N = getN();
+          const dx = L / (N - 1);
+
           const ptr = getPtr();
           const data = Module.HEAPF64.subarray(ptr / 8, ptr / 8 + N);
 
           const canvas = document.getElementById("canvas");
           const ctx = canvas.getContext("2d");
           const dtInput = document.getElementById("dt_input");
+          const resetBtn = document.getElementById("reset_btn");
+          const courantValue = document.getElementById("courant_value");
+          const courantWarning = document.getElementById("courant_warning");
+
+          resetBtn.onclick = () => {
+            init_c();
+          };
+
+          function updateCourant(dt) {
+            const r = (alpha * dt) / (dx * dx);
+            courantValue.textContent = r.toFixed(4);
+
+            if (r > 0.5) {
+              courantValue.style.color = "red";
+              courantWarning.textContent = "（不安定）";
+              courantWarning.style.color = "red";
+            } else {
+              courantValue.style.color = "black";
+              courantWarning.textContent = "（安定）";
+              courantWarning.style.color = "green";
+            }
+          }
 
           function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -189,7 +224,9 @@
           }
 
           function loop() {
-            step_c(parseFloat(dtInput.value));
+            const dt = parseFloat(dtInput.value);
+            updateCourant(dt);
+            step_c(dt);
             draw();
             requestAnimationFrame(loop);
           }
