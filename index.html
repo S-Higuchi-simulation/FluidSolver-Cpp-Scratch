@@ -147,7 +147,58 @@
       </section>
     </main>
 
-    <!-- ここから下に、あなたの既存の Emscripten / Wasm JS をそのまま置く -->
+    <script>
+      var Module = {
+        onRuntimeInitialized: function () {
+          const init_c = Module.cwrap("initialize_simulation_c", "void", []);
+          const step_c = Module.cwrap("one_step_and_draw", "void", ["number"]);
+          const getN = Module.cwrap("get_array_size", "number", []);
+          const getPtr = Module.cwrap("get_temperature_data", "number", []);
+
+          // 初期化
+          init_c();
+
+          const N = getN();
+          const ptr = getPtr();
+          const data = Module.HEAPF64.subarray(ptr / 8, ptr / 8 + N);
+
+          const canvas = document.getElementById("canvas");
+          const ctx = canvas.getContext("2d");
+          const dtInput = document.getElementById("dt_input");
+
+          function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.beginPath();
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 2;
+
+            const margin = 20;
+            const scaleX = canvas.width / (N - 1);
+            const scaleY = (canvas.height - 2 * margin) / 100.0;
+
+            for (let i = 0; i < N; i++) {
+              const x = i * scaleX;
+              const y = canvas.height - margin - data[i] * scaleY;
+
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+
+            ctx.stroke();
+          }
+
+          function loop() {
+            step_c(parseFloat(dtInput.value));
+            draw();
+            requestAnimationFrame(loop);
+          }
+
+          loop();
+        },
+      };
+    </script>
+
     <script src="index.js"></script>
   </body>
 </html>
