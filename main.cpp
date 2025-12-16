@@ -56,9 +56,9 @@ extern "C" {
         T_next[0] = 0.0;
         T_next[N - 1] = 0.0;
 
-        // --- 温度の更新 ---
-        // --- 温度の更新 ---
-        std::swap(T, T_next);
+         for (int i = 0; i < N; ++i) {
+        T[i] = T_next[i];
+    }
 
 
         // [TODO: 描画処理]
