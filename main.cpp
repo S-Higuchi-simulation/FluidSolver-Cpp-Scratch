@@ -35,7 +35,7 @@ int main() {
     for (int i = start_node; i < end_node; ++i) {
         T[i] = 100.0;
     }
-
+/*
     // 4. 時間発展のループ
     // time_step は「何回計算するか」の回数（例えば 1000回）
     int max_steps = 1000;
@@ -70,6 +70,6 @@ int main() {
     }
 
 //    std::cout << "Setup complete. Ready to simulate." << std::endl;
-
+*/
     return 0;
 }
