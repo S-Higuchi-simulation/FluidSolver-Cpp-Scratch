@@ -2,84 +2,152 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <title>1D Heat Diffusion</title>
+    <title>一次元熱伝導シミュレーション</title>
+
+    <!-- MathJax -->
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [
+            ["$", "$"],
+            ["\\(", "\\)"],
+          ],
+          displayMath: [["$$", "$$"]],
+        },
+      };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
     <style>
       body {
+        font-family: "Helvetica", "Arial", sans-serif;
+        background: #f5f5f5;
         margin: 0;
-        background: #222;
-        color: white;
+        line-height: 1.7;
       }
+
+      main {
+        max-width: 900px;
+        margin: auto;
+        padding: 40px;
+        background: white;
+      }
+
+      h1,
+      h2 {
+        border-bottom: 2px solid #ddd;
+        padding-bottom: 5px;
+      }
+
+      section {
+        margin-bottom: 40px;
+      }
+
       canvas {
         display: block;
-        margin: auto;
+        margin: 20px auto;
         background: black;
+      }
+
+      .control {
+        text-align: center;
+        margin-bottom: 20px;
       }
     </style>
   </head>
 
   <body>
-    <div style="text-align: center; padding: 10px">
-      dt:
-      <input type="number" id="dt_input" value="0.001" step="0.0001" />
-    </div>
+    <main>
+      <h1>一次元熱伝導方程式の数値シミュレーション</h1>
 
-    <canvas id="canvas" width="600" height="300"></canvas>
+      <section>
+        <h2>1. 一次元熱伝導方程式</h2>
 
-    <script>
-      var Module = {
-        onRuntimeInitialized: function () {
-          // --- C++ 関数ラップ ---
-          const init_c = Module.cwrap("initialize_simulation_c", "void", []);
-          const step_c = Module.cwrap("one_step_and_draw", "void", ["number"]);
-          const getN = Module.cwrap("get_array_size", "number", []);
-          const getPtr = Module.cwrap("get_temperature_data", "number", []);
+        <p>
+          一次元空間 $x$ における温度分布 $T(x,t)$
+          は、熱が拡散によって伝わる場合、 次の
+          <strong>一次元熱伝導方程式</strong> に従う。
+        </p>
 
-          // ★ 初期化は JS から必ず呼ぶ ★
-          init_c();
+        $$ \frac{\partial T}{\partial t} = \alpha \frac{\partial^2 T}{\partial
+        x^2} $$
 
-          const N = getN();
-          const ptr = getPtr();
+        <p>
+          ここで $\alpha$ は <strong>熱拡散係数</strong> であり、
+          熱がどれだけ速く広がるかを表す。
+        </p>
+      </section>
 
-          const data = Module.HEAPF64.subarray(ptr / 8, ptr / 8 + N);
+      <section>
+        <h2>2. 空間と時間の離散化</h2>
 
-          const canvas = document.getElementById("canvas");
-          const ctx = canvas.getContext("2d");
-          const dtInput = document.getElementById("dt_input");
+        <p>
+          数値計算では、連続な空間と時間を格子点に分割する。 長さ $L$ の区間を
+          $N$ 点に分割すると、空間刻み幅は
+        </p>
 
-          function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        $$ \Delta x = \frac{L}{N-1} $$
 
-            const margin = 30;
-            const scaleX = canvas.width / (N - 1);
-            const scaleY = (canvas.height - 2 * margin) / 100.0;
+        <p>時間も同様に刻み幅 $\Delta t$ で離散化する。</p>
+      </section>
 
-            ctx.beginPath();
-            ctx.strokeStyle = "red";
-            ctx.lineWidth = 2;
+      <section>
+        <h2>3. 差分近似</h2>
 
-            for (let i = 0; i < N; i++) {
-              const x = i * scaleX;
-              const y = canvas.height - margin - data[i] * scaleY;
+        <h3>時間微分（前進差分）</h3>
 
-              if (i === 0) ctx.moveTo(x, y);
-              else ctx.lineTo(x, y);
-            }
+        $$ \frac{\partial T}{\partial t} \approx \frac{T_i^{n+1} - T_i^n}{\Delta
+        t} $$
 
-            ctx.stroke();
-          }
+        <h3>空間2階微分（中心差分）</h3>
 
-          function loop() {
-            const dt = parseFloat(dtInput.value);
-            step_c(dt);
-            draw();
-            requestAnimationFrame(loop);
-          }
+        $$ \frac{\partial^2 T}{\partial x^2} \approx \frac{T_{i+1}^n - 2T_i^n +
+        T_{i-1}^n}{(\Delta x)^2} $$
+      </section>
 
-          loop();
-        },
-      };
-    </script>
+      <section>
+        <h2>4. 更新式</h2>
 
+        <p>これらを熱伝導方程式に代入すると、次の更新式が得られる。</p>
+
+        $$ T_i^{n+1} = T_i^n + r (T_{i+1}^n - 2T_i^n + T_{i-1}^n) $$ $$ r =
+        \frac{\alpha \Delta t}{(\Delta x)^2} $$
+      </section>
+
+      <section>
+        <h2>5. クーラン条件（安定性条件）</h2>
+
+        <p>
+          この陽的差分法が安定に動作するためには、次の条件を満たす必要がある。
+        </p>
+
+        $$ r \le \frac{1}{2} $$
+
+        <p>すなわち、</p>
+
+        $$ \Delta t \le \frac{(\Delta x)^2}{2\alpha} $$
+
+        <p>この条件を破ると、温度は数値的に発散し、非物理的な結果になる。</p>
+      </section>
+
+      <section>
+        <h2>6. シミュレーション</h2>
+
+        <p>
+          以下のシミュレーションでは、中央に高温領域を与えた一次元熱伝導問題を
+          陽的有限差分法で計算している。
+        </p>
+
+        <div class="control">
+          dt:
+          <input type="number" id="dt_input" value="0.001" step="0.0001" />
+        </div>
+
+        <canvas id="canvas" width="600" height="300"></canvas>
+      </section>
+    </main>
+
+    <!-- ここから下に、あなたの既存の Emscripten / Wasm JS をそのまま置く -->
     <script src="index.js"></script>
   </body>
 </html>
